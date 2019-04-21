@@ -1,17 +1,17 @@
 import argparse
-import time
+import os
 import tensorflow as tf
 from tensorflow.python.keras.datasets import imdb
 from mpl_toolkits.mplot3d import Axes3D
 import matplotlib.pyplot as plt
-from matplotlib import cm
 import numpy as np
-import util
+from util import build_model, vectorize, explore
 
 FLAGS = None
 
 # Limit on the number of features.
 TOP_K = 20000
+
 
 def ngram(train, val, learning_rate=1e-3, epochs=1000, batch_size=128, 
           layers=2, units=64, dropout_rate=0.2):
@@ -32,12 +32,12 @@ def ngram(train, val, learning_rate=1e-3, epochs=1000, batch_size=128,
     (val_texts, val_labels) = val
 
     # Vectorize texts.
-    X_train, X_val = util.vectorize.ngram_vectorize(train_texts, train_labels, val_texts)
+    X_train, X_val = vectorize.ngram_vectorize(train_texts, train_labels, val_texts)
 
     # Create model instance.
-    model = util.build_model.MLP(layers=layers, units=units,
-                                 dropout_rate=dropout_rate,
-                                 input_shape=X_train.shape[1:])
+    model = build_model.MLP(layers=layers, units=units,
+                            dropout_rate=dropout_rate,
+                            input_shape=X_train.shape[1:])
 
     # Compile model with learning parameters.
     optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
@@ -62,6 +62,7 @@ def ngram(train, val, learning_rate=1e-3, epochs=1000, batch_size=128,
     model.save('mlp_model.h5')
     return history['val_acc'][-1], history['val_loss'][-1]
 
+
 def sequence(train, val, learning_rate=1e-3, epochs=1000, batch_size=128,
              blocks=2, filters=64, dropout_rate=0.2, embedding_dim=200,
              kernel_size=3, pool_size=3):
@@ -85,20 +86,20 @@ def sequence(train, val, learning_rate=1e-3, epochs=1000, batch_size=128,
     (val_texts, val_labels) = val
 
     # Vectorize texts.
-    X_train, X_val, word_index = util.vectorize.sequence_vectorize(train_texts, val_texts)
+    X_train, X_val, word_index = vectorize.sequence_vectorize(train_texts, val_texts)
 
     # Number of features will be the embedding input dimension. Add 1 for the
     # reserved index 0.
     num_features = min(len(word_index) + 1, TOP_K)
 
     # Create model instance.
-    model = util.build_model.sepCNN(blocks=blocks, filters=filters,
-                                    kernel_size=kernel_size, 
-                                    embedding_dim=embedding_dim,
-                                    dropout_rate=dropout_rate,
-                                    pool_size=pool_size,
-                                    input_shape=X_train.shape[1:],
-                                    num_features=num_features)
+    model = build_model.sepCNN(blocks=blocks, filters=filters,
+                               kernel_size=kernel_size,
+                               embedding_dim=embedding_dim,
+                               dropout_rate=dropout_rate,
+                               pool_size=pool_size,
+                               input_shape=X_train.shape[1:],
+                               num_features=num_features)
 
     # Compile model with learning parameters.
     optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
@@ -121,8 +122,9 @@ def sequence(train, val, learning_rate=1e-3, epochs=1000, batch_size=128,
             acc=history['val_acc'][-1], loss=history['val_loss'][-1]))
 
     # Save model.
-    model.save('sepcnn_model.h5')
+    model.save('sequence_sepcnn_model.h5')
     return history['val_acc'][-1], history['val_loss'][-1]
+
 
 def tune_ngram(train, val):
     """Tunes n-gram model on the given dataset.
@@ -152,6 +154,7 @@ def tune_ngram(train, val):
 
     plot_params(params)
 
+
 def plot_params(params):
     """Creates a 3D surface plot of given parameters.
 
@@ -164,9 +167,10 @@ def plot_params(params):
     ax.plot_trisurf(params['layers'],
                     params['units'],
                     params['accuracy'],
-                    cmap=cm.coolwarm,
                     antialiased=False)
+    plt.set_cmap('coolwarm')
     plt.show()
+
 
 def get_embedding(word_index, embedding_dir, embedding_dim):
     """Gets embedding matrix from the embedding index data.
@@ -211,6 +215,7 @@ def get_embedding(word_index, embedding_dir, embedding_dim):
             embedding_matrix[i] = embedding_vector
     return embedding_matrix
 
+
 def fine_tuned_sequence(train, val, embedding_dir, learning_rate=1e-3,
                         epochs=1000, batch_size=128, blocks=2,
                         filters=64, dropout_rate=0.2, embedding_dim=200,
@@ -236,7 +241,7 @@ def fine_tuned_sequence(train, val, embedding_dir, learning_rate=1e-3,
     (val_texts, val_labels) = val
 
     # Vectorize texts.
-    X_train, X_val, word_index = util.vectorize.sequence_vectorize(train_texts, val_texts)
+    X_train, X_val, word_index = vectorize.sequence_vectorize(train_texts, val_texts)
 
     # Number of features will be the embedding input dimension. Add 1 for the
     # reserved index 0.
@@ -247,16 +252,16 @@ def fine_tuned_sequence(train, val, embedding_dir, learning_rate=1e-3,
     # Create model instance. First time we will train rest of network while
     # keeping embedding layer weights frozen. So, we set
     # is_embedding_trainable as False.
-    model = util.build_model.sepCNN(blocks=blocks, filters=filters,
-                                     kernel_size=kernel_size,
-                                     embedding_dim=embedding_dim,
-                                     dropout_rate=dropout_rate,
-                                     pool_size=pool_size,
-                                     input_shape=X_train.shape[1:],
-                                     num_features=num_features,
-                                     pretrained_embedding=True,
-                                     embedding_trainable=False,
-                                     embedding_matrix=embedding_matrix)
+    model = build_model.sepCNN(blocks=blocks, filters=filters,
+                               kernel_size=kernel_size,
+                               embedding_dim=embedding_dim,
+                               dropout_rate=dropout_rate,
+                               pool_size=pool_size,
+                               input_shape=X_train.shape[1:],
+                               num_features=num_features,
+                               pretrained_embedding=True,
+                               embedding_trainable=False,
+                               embedding_matrix=embedding_matrix)
 
     # Compile model with learning parameters.
     optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
@@ -277,17 +282,16 @@ def fine_tuned_sequence(train, val, embedding_dir, learning_rate=1e-3,
 
     # Create another model instance. This time we will unfreeze the embedding
     # layer and let it fine-tune to the given dataset.
-    model = util.build_model.sepCNN(blocks=blocks, filters=filters,
-                                     kernel_size=kernel_size,
-                                     embedding_dim=embedding_dim,
-                                     dropout_rate=dropout_rate,
-                                     pool_size=pool_size,
-                                     input_shape=X_train.shape[1:],
-                                     num_classes=num_classes,
-                                     num_features=num_features,
-                                     pretrained_embedding=True,
-                                     embedding_trainable=True,
-                                     embedding_matrix=embedding_matrix)
+    model = build_model.sepCNN(blocks=blocks, filters=filters,
+                               kernel_size=kernel_size,
+                               embedding_dim=embedding_dim,
+                               dropout_rate=dropout_rate,
+                               pool_size=pool_size,
+                               input_shape=X_train.shape[1:],
+                               num_features=num_features,
+                               pretrained_embedding=True,
+                               embedding_trainable=True,
+                               embedding_matrix=embedding_matrix)
 
     # Compile model with learning parameters.
     model.compile(optimizer=optimizer, loss='binary_crossentropy', metrics=['acc'])
@@ -311,13 +315,13 @@ def fine_tuned_sequence(train, val, embedding_dir, learning_rate=1e-3,
     model.save('sepcnn_fine_tuned_model.h5')
     return history['val_acc'][-1], history['val_loss'][-1]
 
-def data_generator(X, y, num_features, batch_size):
+
+def data_generator(X, y, batch_size):
     """Generates batches of vectorized texts for training/validation.
 
     Args:
-        X: np.matrix, feature matrix.
+        X: np.ndarray, feature matrix.
         y: np.ndarray, labels.
-        num_features: int, number of features.
         batch_size: int, number of samples per batch.
 
     Returns:
@@ -339,6 +343,7 @@ def data_generator(X, y, num_features, batch_size):
             X_batch = X[start_idx:end_idx]
             y_batch = y[start_idx:end_idx]
             yield X_batch, y_batch
+
 
 def batch_sequence(train, val, learning_rate=1e-3, epochs=1000, 
                    batch_size=128, blocks=2, filters=64, dropout_rate=0.2,
@@ -363,20 +368,20 @@ def batch_sequence(train, val, learning_rate=1e-3, epochs=1000,
     (val_texts, val_labels) = val
 
     # Vectorize texts.
-    X_train, X_val, word_index = util.vectorize.sequence_vectorize(train_texts, val_texts)
+    X_train, X_val, word_index = vectorize.sequence_vectorize(train_texts, val_texts)
 
     # Number of features will be the embedding input dimension. Add 1 for the
     # reserved index 0.
     num_features = min(len(word_index) + 1, TOP_K)
 
     # Create model instance.
-    model = util.build_model.sepCNN(blocks=blocks, filters=filters,
-                                     kernel_size=kernel_size,
-                                     embedding_dim=embedding_dim,
-                                     dropout_rate=dropout_rate,
-                                     pool_size=pool_size,
-                                     input_shape=X_train.shape[1:],
-                                     num_features=num_features)
+    model = build_model.sepCNN(blocks=blocks, filters=filters,
+                               kernel_size=kernel_size,
+                               embedding_dim=embedding_dim,
+                               dropout_rate=dropout_rate,
+                               pool_size=pool_size,
+                               input_shape=X_train.shape[1:],
+                               num_features=num_features)
 
     # Compile model with learning parameters.
     optimizer = tf.keras.optimizers.Adam(lr=learning_rate)
@@ -387,8 +392,8 @@ def batch_sequence(train, val, learning_rate=1e-3, epochs=1000,
     callbacks = [tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)]
 
     # Create training and validation generators.
-    train_generator = data_generator(X_train, train_labels, num_features, batch_size)
-    val_generator = data_generator(X_val, val_labels, num_features, batch_size)
+    train_generator = data_generator(X_train, train_labels, batch_size)
+    val_generator = data_generator(X_val, val_labels, batch_size)
 
     # Get number of training steps. This indicated the number of steps it takes
     # to cover all samples in one epoch.
@@ -418,40 +423,54 @@ def batch_sequence(train, val, learning_rate=1e-3, epochs=1000,
     model.save('batch_sequence_sepcnn_model.h5')
     return history['val_acc'][-1], history['val_loss'][-1]
 
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_dir', type=str, default='./data',
+    parser.add_argument('--data_dir', type=str, default='imdb/',
                         help='if you do not have the data locally \
                         (at "~/.keras/datasets/" + path), it will be \
                         downloaded to provided location.')
 
     parser.add_argument('--model', type=str, default='ngram',
-                        help='Which model to use for training')
+                        help='Which model to use for training. Options are \
+                              ngram(default), sequence, fine_tuned_sequence, batch_sequence')
+
+    parser.add_argument('--explore', action='store_false',
+                        help='Specify if you want to check the dist plots')
+
+    parser.add_argument('--embedding_dir', type=str, default='/embedding',
+                        help='embedding input data directory')
 
     parser.add_argument('--learning_rate', type=int, default=1e-3,
                         help='Model learning rate parameter')
 
     parser.add_argument('--epochs', type=int, default=1000,
                         help='How many passes to make over the dataset before\
-                            training stops')
+                              training stops')
 
     parser.add_argument('--batch_size', type=int, default=128,
                         help='Amount of data to train per epochs')
 
-    parser.add_argument('--embedding_dir', type=str, default='./data',
-                        help='embedding input data directory')
+    # TODO Add more parser arguments
 
-    #TODO Add more parser arguments
+    FLAGS = parser.parse_args()
 
-    FLAGS, unparsed = parser.parse_known_args()
-
-    train, val = imdb.load_data(path="imdb.npz", num_words=None,
+    train, val = imdb.load_data(path=''.join([FLAGS.data_dir, "imdb.npz"]), num_words=None,
                                 skip_top=0, maxlen=None, seed=113,
                                 start_char=1, oov_char=2, index_from=3)
-    
+    if FLAGS.explore:
+        explore.plot_class_dist(np.random.choice(np.array(train[1]), 1000))
+        explore.plot_freq_dist(np.random.choice(np.array(train[0]), 1000))
+        explore.plot_sample_length_dist(np.random.choice(np.array(train[0]), 1000))
+
     if FLAGS.model == 'ngram':
         ngram(train, val, FLAGS.learning_rate, FLAGS.epochs, FLAGS.batch_size)
-    else:
+    elif FLAGS.model == 'sequence':
         sequence(train, val, FLAGS.learning_rate, FLAGS.epochs, FLAGS.batch_size)
-    
+    elif FLAGS.model == 'fine_tuned_sequence':
+        fine_tuned_sequence(train, val, FLAGS.embedding_dir)
+    elif FLAGS.model == 'batch_sequence':
+        batch_sequence(train, val)
+    else:
+        raise AttributeError('Unknown model parameter')
 

@@ -29,12 +29,12 @@ def ngram_vectorize(train_texts, train_labels, val_texts):
         val_texts: A list containing validation text strings.
 
     Returns:
-        x_train, x_val: A numpy array vectorized training and validation texts
+        train, val: A numpy array vectorized training and validation texts
     """
     
     vectorizer = TfidfVectorizer(analyzer=TOKEN_MODE, ngram_range=NGRAM_RANGE,
                                  min_df=MIN_DOCUMENT_FREQUENCY, strip_accents='unicode',
-                                 decode_error='replace')
+                                 decode_error='replace', dtype=np.float32)
     train = vectorizer.fit_transform(train_texts)
     val = vectorizer.transform(val_texts)
 

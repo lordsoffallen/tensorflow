@@ -53,7 +53,7 @@ def sepCNN(blocks, filters, kernel_size, embedding_dim,
         embedding_trainable: bool, true if embedding layer is trainable.
         embedding_matrix: dict, dictionary with embedding coefficients.
 
-    # Returns
+    Returns:
         A sepCNN model instance.
     """
 
@@ -61,11 +61,9 @@ def sepCNN(blocks, filters, kernel_size, embedding_dim,
 
     # Add embedding layer. If pre-trained embedding is used add weights to the
     # embeddings layer and set trainable to input embedding_trainable flag.
-    if use_pretrained_embedding:
-        model.add(Embedding(input_dim=num_features,
-                            output_dim=embedding_dim,
-                            input_length=input_shape[0],
-                            weights=[embedding_matrix],
+    if pretrained_embedding:
+        model.add(Embedding(input_dim=num_features, output_dim=embedding_dim,
+                            input_length=input_shape[0], weights=[embedding_matrix],
                             trainable=embedding_trainable))
     else:
         model.add(Embedding(input_dim=num_features,
@@ -74,24 +72,16 @@ def sepCNN(blocks, filters, kernel_size, embedding_dim,
 
     for _ in range(blocks-1):
         model.add(Dropout(rate=dropout_rate))
-        model.add(SeparableConv1D(filters=filters,
-                                  kernel_size=kernel_size,
-                                  activation='relu',
-                                  padding='same'))
-        model.add(SeparableConv1D(filters=filters,
-                                  kernel_size=kernel_size,
-                                  activation='relu',
-                                  padding='same'))
+        model.add(SeparableConv1D(filters=filters, kernel_size=kernel_size,
+                                  activation='relu', padding='same'))
+        model.add(SeparableConv1D(filters=filters, kernel_size=kernel_size,
+                                  activation='relu', padding='same'))
         model.add(MaxPooling1D(pool_size=pool_size))
 
-    model.add(SeparableConv1D(filters=filters*2,
-                              kernel_size=kernel_size,
-                              activation='relu',
-                              padding='same'))
-    model.add(SeparableConv1D(filters=filters*2,
-                              kernel_size=kernel_size,
-                              activation='relu',
-                              padding='same'))
+    model.add(SeparableConv1D(filters=filters*2, kernel_size=kernel_size,
+                              activation='relu', padding='same'))
+    model.add(SeparableConv1D(filters=filters*2, kernel_size=kernel_size,
+                              activation='relu',  padding='same'))
     model.add(GlobalAveragePooling1D())
     model.add(Dropout(rate=dropout_rate))
     model.add(Dense(1, activation='sigmoid'))

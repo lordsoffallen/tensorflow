@@ -23,15 +23,15 @@ def plot_freq_dist(sample_texts, ngram_range=(1, 2), max_ngrams=50):
     """Plots the frequency distribution given a ngram range.
 
     Args:
-        samples_texts: A list containing sample texts.
+        sample_texts: A list containing sample texts.
         ngram_range: A tuple (min, mplt), The range of n-gram values to consider.
                     Min and mplt are the lower and upper bound values for the range.
         max_ngrams: int, number of n-grams to plot.
     """
 
     vectorizer = CountVectorizer(analyzer='word', dtype='int32',
-                                ngram_range=ngram_range, strip_accents='unicode',
-                                decode_error='replace', max_features=max_ngrams)
+                                 ngram_range=ngram_range, strip_accents='unicode',
+                                 decode_error='replace', max_features=max_ngrams)
     vectorized_texts = vectorizer.fit_transform(sample_texts)
     ngrams = list(vectorizer.get_feature_names())
 
@@ -51,7 +51,7 @@ def plot_sample_length_dist(sample_texts):
     """Plots the sample length distribution.
 
     Args:
-        samples_texts: A list containing sample texts.
+        sample_texts: A list containing sample texts.
     """
 
     plt.hist([len(s) for s in sample_texts], 50)
