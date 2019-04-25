@@ -19,7 +19,7 @@ np.random.seed(7)
 # load pima indians dataset
 ds = np.loadtxt("pima-indians-diabetes.csv", delimiter=",")
 
-# split into input (X) and output (Y) variables
+# split into input (X) and output (y) variables
 X = ds[:,0:8]
 y = ds[:,8]
 
@@ -28,5 +28,5 @@ model = KerasClassifier(build_fn=create_model, epochs=150, batch_size=10, verbos
 
 # evaluate using 10-fold cross validation
 kfold = StratifiedKFold(n_splits=10, shuffle=True, random_state=seed)
-results = cross_val_score(model, X, Y, cv=kfold)
+results = cross_val_score(model, X, y, cv=kfold)
 print(results.mean())

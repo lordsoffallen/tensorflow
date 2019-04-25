@@ -19,9 +19,9 @@ np.random.seed(7)
 # load pima indians dataset
 ds = np.loadtxt("pima-indians-diabetes.csv", delimiter=",")
 
-# split into input (X) and output (Y) variables
+# split into input (X) and output (y) variables
 X = ds[:,0:8]
-Y = ds[:,8]
+y = ds[:,8]
 
 # create model
 model = KerasClassifier(build_fn=create_model, verbose=0)
@@ -33,7 +33,7 @@ epochs = [50, 100, 150]
 batches = [5, 10, 20]
 param_grid = dict(optimizer=optimizers, epochs=epochs, batch_size=batches, init=inits)
 grid = GridSearchCV(estimator=model, param_grid=param_grid)
-grid_result = grid.fit(X, Y)
+grid_result = grid.fit(X, y)
 
 # summarize results
 print("Best: %f using %s" % (grid_result.best_score_, grid_result.best_params_))
