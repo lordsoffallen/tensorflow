@@ -1,0 +1,6 @@
+.idea/
+.ipynb_checkpoints/
+
+yad2k/__pycache__/
+
+model_data/yolo.h5
