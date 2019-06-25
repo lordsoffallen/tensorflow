@@ -141,13 +141,13 @@ def build_model():
 
     embedding = Embedding(VOCAB_SIZE, EMBEDDING_DIM, input_length=1, name='embedding')
 
-    target = Input((1,))
-    context = Input((1,))
+    target_inputs = Input((1,))
+    context_inputs = Input((1,))
 
-    target = embedding(target)
+    target = embedding(target_inputs)
     target = Reshape((EMBEDDING_DIM, 1))(target)
 
-    context = embedding(context)
+    context = embedding(context_inputs)
     context = Reshape((EMBEDDING_DIM, 1))(context)
 
     # setup a cosine similarity operation which will be output in a secondary model
@@ -161,11 +161,11 @@ def build_model():
     output = Dense(1, activation='sigmoid')(dot_product)
 
     # create the primary training model
-    model = Model(input=[target, context], output=output)
+    model = Model([target_inputs, context_inputs], output)
     model.compile(loss='binary_crossentropy', optimizer='rmsprop')
 
     # create a secondary validation model to run our similarity checks during training
-    val_model = Model(input=[target, context], output=similarity)
+    val_model = Model([target_inputs, context_inputs], similarity)
 
     return model, val_model
 
@@ -174,22 +174,24 @@ if __name__ == '__main__':
     data, word2idx = build_dataset(max_words=VOCAB_SIZE)
     print('Printing first 10 words from vocabulary: ', data[:10])
 
+    model, val_model = build_model()
+
+    callback = SimilarityCallback(word2idx, val_model, vocab_size=VOCAB_SIZE)
+
     sampling_table = sequence.make_sampling_table(VOCAB_SIZE)
     couples, labels = sequence.skipgrams(data, VOCAB_SIZE, window_size=WINDOW_SIZE, sampling_table=sampling_table)
     word_target, word_context = zip(*couples)
     word_target = np.array(word_target, dtype="int32")
     word_context = np.array(word_context, dtype="int32")
 
-    model, val_model = build_model()
-
-    callback = SimilarityCallback(word2idx, val_model, vocab_size=VOCAB_SIZE)
-
-    y = np.zeros((1,))
+    x1,x2, y = np.zeros((1,)), np.zeros((1,)), np.zeros((1,))
 
     for c in range(EPOCHS):
         idx = np.random.randint(0, len(labels)-1)
-        y[0] = labels[idx]    # As an np.array
-        loss = model.train_on_batch([word_target[idx], word_context[idx]], y)
+        x1[0, ] = word_target[idx]
+        x2[0, ] = word_context[idx]
+        y[0, ] = labels[idx]    # As an np.array
+        loss = model.train_on_batch([x1, x2], y)
         if c % 100 == 0:
             print("Iteration: {}, Loss: {}".format(c, loss))
         if c % 10000 == 0:
