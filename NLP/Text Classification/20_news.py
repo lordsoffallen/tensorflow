@@ -132,7 +132,7 @@ def get_embeddings(word2embed, dim, max_num_words, word_index):
         A numpy array containing embedding weights
     """
 
-    num_words = min(max_num_words, len(wordidx)) + 1
+    num_words = min(max_num_words, len(word_index)) + 1
     embedding = np.zeros((num_words, dim))
     for word, idx in word_index.items():
         if idx > max_num_words: continue
