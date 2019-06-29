@@ -1,60 +1,72 @@
-import numpy as np
-import matplotlib.pyplot as plt
-
-from collections import Counter
 from sklearn.feature_extraction.text import CountVectorizer
+from collections import Counter
+import matplotlib.pyplot as plt
+import numpy as np
 
 
-def get_num_words(sample_texts):
-    """Gets the median number of words per sample given corpus.
+def get_num_words(sample):
+    """ Gets the median number of words per sample given corpus.
 
-    Args:
-        sample_texts: A list containing sample texts.
+    Parameters
+    ----------
+    sample: list of str
+        A list containing sample texts.
 
-    Returns:
+    Returns
+    -------
+    num_words: int
         Integer, median number of words per sample.
     """
 
-    num_words = [len(s.split()) for s in sample_texts]
-    return np.median(num_words)
+    return np.median([len(s.split()) for s in sample])
 
 
-def plot_freq_dist(sample_texts, ngram_range=(1, 2), max_ngrams=50):
+def plot_freq_dist(sample, ngram_range=(1, 2), max_ngrams=50):
     """Plots the frequency distribution given a ngram range.
 
-    Args:
-        sample_texts: A list containing sample texts.
-        ngram_range: A tuple (min, mplt), The range of n-gram values to consider.
-                    Min and mplt are the lower and upper bound values for the range.
-        max_ngrams: int, number of n-grams to plot.
+    Parameters
+    ----------
+    sample: list of str
+        A list containing sample texts.
+    ngram_range: tuple
+        The range of n-gram values to consider.
+    max_ngrams: int
+        number of n-grams to plot.
     """
 
     vectorizer = CountVectorizer(analyzer='word', dtype='int32',
                                  ngram_range=ngram_range, strip_accents='unicode',
                                  decode_error='replace', max_features=max_ngrams)
-    vectorized_texts = vectorizer.fit_transform(sample_texts)
+    vectorized_texts = vectorizer.fit_transform(sample)
     ngrams = list(vectorizer.get_feature_names())
 
-    # Add up the counts per n-gram ie. column-wise
+    # Add up the counts column-wise per n-gram
     counts = vectorized_texts.sum(axis=0).tolist()[0]
+    
+     # Sort n-grams and counts by frequency and get top `num_ngrams` ngrams.
+    counts, ngrams = zip(*[(c, n) for c, n in sorted(zip(counts, ngrams), reverse=True)])
+    ngrams = list(ngrams)[:max_ngrams]
+    counts = list(counts)[:max_ngrams]
 
     idx = np.arange(max_ngrams)
     plt.bar(idx, counts, width=0.8, color='b')
     plt.xlabel('N-grams')
     plt.ylabel('Frequencies')
     plt.title('Frequency distribution of n-grams')
-    plt.xticks(idx, ngrams, rotation=45)
+    plt.xticks(idx, ngrams, rotation=90)
     plt.show()
 
 
-def plot_sample_length_dist(sample_texts):
+def plot_length_dist(sample):
     """Plots the sample length distribution.
 
-    Args:
-        sample_texts: A list containing sample texts.
+    Parameters
+    ----------
+    sample: list of str
+        A list containing sample texts.
     """
 
-    plt.hist([len(s) for s in sample_texts], 50)
+    plt.hist([len(s) for s in sample], 50)
     plt.xlabel('Length of a sample')
     plt.ylabel('Number of samples')
     plt.title('Sample length distribution')
@@ -64,10 +76,12 @@ def plot_sample_length_dist(sample_texts):
 def plot_class_dist(labels):
     """Plots the class distribution.
 
-    Args:
-        labels: A list containing label values. There should be at least
-                one sample for values in the range (0, num_classes -1)
+    Parameters
+    ----------
+    labels: list
+        A list containing label values.
     """
+
     num_classes = 2
     count_map = Counter(labels)
     counts = [count_map[i] for i in range(num_classes)]

@@ -1,0 +1,5 @@
+__pycache__/
+
+mlp_model.h5
+
+.ipynb_checkpoints

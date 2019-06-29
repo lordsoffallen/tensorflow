@@ -1,23 +1,28 @@
-# Text Classification on IMBD Dataset
+# Text Classification Guide with IMDB
 
-1.  *util/explore* - Helper functions to understand datasets.
+This repository contains end-to-end text classification guide to solve
+text classification problems using machine learning.
 
-2.  *util/vectorize* - N-gram and sequence vectorization functions.
 
-3.  *util/build_model* - Helper functions to create multi-layer perceptron and
+## Scripts
+
+2.  `util/explore.py` - Helper functions to plot datasets.
+
+3.  `util/vectorize.py` - N-gram and sequence vectorization functions.
+
+4.  `util/models.py` - Functions to create multi-layer perceptron and
     separable convnet models.
 
-4.  *train* - Demonstrates how to use all of the above modules and train a
-    model.
+5.  `train.py` - Functions to train sequence or ngram models.
 
-    + *ngram* - Trains a multi-layer perceptron model.
+    + *train_ngram()* - Trains a multi-layer perceptron model.
 
-    + *sequence* - Trains a sepCNN model.
+    + *train_sequence()* - Trains a sepCNN model.
 
-    + *fine_tuned_sequence* - Trains a sepCNN model with
-    pre-trained embeddings that are fine-tuned.
+6.  `fine_tune.py` - Script to find the best hyper-parameter values for the model.
 
-    + *batch_sequence* - Same as *sequence* but here
-    we are training data in batches.
+    + *fine_tune_sequence()* - Trains a sepCNN model with
+    pre-trained embeddings that are fine-tuned
 
-    + *tune_ngram* - Tune MLP model parameters.
+    + *fine_tune_ngram()* - Trains a MLP model with
+    different model parameters.
