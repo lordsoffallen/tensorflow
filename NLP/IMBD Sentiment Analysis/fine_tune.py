@@ -5,7 +5,7 @@ import numpy as np
 import train as training
 
 
-GLOVE_DIR = './keras/models/glove.6B.100d.txt'
+GLOVE_DIR = './keras/models/glove.6B.200d.txt'
 TOP_K = 20000       # Limit on the number of features.
 
 
